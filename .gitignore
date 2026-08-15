@@ -1,0 +1,12 @@
+# Ignore TIA Portal cache and temporary files
+*.tmp
+*.log
+Cache/
+IM/
+AdditionalFiles/
+
+# Ignore Windows thumbnails
+Thumbs.db
+
+# Ignore Docker data (so we don't backup huge databases)
+docker/data/

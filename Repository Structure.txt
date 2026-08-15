@@ -1,0 +1,15 @@
+SmartLine-360/
+├── README.md                       # The front door of your project
+├── docs/
+│   ├── ARCHITECTURE.md             # System design and data flow
+│   ├── SETUP.md                    # Step-by-step installation guide
+│   ├── DEVELOPMENT.md              # How to modify and extend the project
+│   ├── DEPLOYMENT.md               # How to run the full stack
+│   └── TROUBLESHOOTING.md          # Common issues and solutions
+├── plc-programs/                   # TIA Portal project files (.ap17)
+├── factory-io-scenes/              # Your custom .factoryio scene file
+├── ignition-projects/              # Ignition exports (if applicable)
+├── node-red-flows/                 # Node-RED flow JSON exports
+├── docker/                         # Docker Compose files for Kafka, InfluxDB, Grafana
+├── power-bi/                       # Power BI dashboard files (.pbix)
+└── assets/                         # Images, screenshots, architecture diagrams
