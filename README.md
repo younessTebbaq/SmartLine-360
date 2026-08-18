@@ -16,8 +16,7 @@
 [![Power BI](https://img.shields.io/badge/Power%20BI-Desktop-F2C811?logo=powerbi&logoColor=black)](https://powerbi.microsoft.com)
 [![Node-RED](https://img.shields.io/badge/Node--RED-3.x-8F0000?logo=nodered&logoColor=white)](https://nodered.org)
 
-**[Architecture](#️-system-architecture)** · **[Quick Start](#-quick-start)** · **[Tech Stack](#-technology-stack)** · **[Docs](#-documentation)**
-
+**[Architecture](#️-system-architecture)** · **[Quick Start](#-quick-start)** · **[Tech Stack](#️-technology-stack)** · **[Docs](#-documentation)**
 </div>
 
 ---
@@ -26,14 +25,14 @@
 
 - [Overview](#-overview)
 - [System Architecture](#️-system-architecture)
-- [Technology Stack](#-technology-stack)
+- [Technology Stack](#️-technology-stack)
 - [Key Features](#-key-features)
 - [Project Metrics](#-project-metrics)
 - [Quick Start](#-quick-start)
 - [Repository Structure](#-repository-structure)
 - [Documentation](#-documentation)
-- [Dashboards](#-dashboards)
-- [Roadmap](#-roadmap)
+- [Dashboards](#️-dashboards)
+- [Roadmap](#️-roadmap)
 - [About This Project](#-about-this-project)
 - [Author](#-author)
 - [License](#-license)
