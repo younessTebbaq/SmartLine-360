@@ -42,7 +42,7 @@
 
 ## 📌 Overview
 
-**SmartLine 360** is a reference implementation of a complete Industry 4.0 data pipeline built around a simulated 3-station production line (detection → inspection → sorting). It demonstrates the full **OT-IT integration stack** — from real-time PLC logic to predictive maintenance AI and executive-level analytics — using the same tools and architectural patterns deployed in real smart factories.
+**SmartLine 360** is a reference implementation of a complete Industry 4.0 data pipeline built around a simulated 3-station production line (Infeed & Color Sorting → Assembly → Packaging & Palletizing). It demonstrates the full **OT-IT integration stack** — from real-time PLC logic to predictive maintenance AI and executive-level analytics — using the same tools and architectural patterns deployed in real smart factories.
 
 The project was built to answer one question:
 
