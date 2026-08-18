@@ -62,7 +62,7 @@ The system is organized into **7 horizontal layers**, each with a distinct role 
 
 ```mermaid
 graph TD
-    FIO["🏭 Factory I/O\nProcess Simulation\n(3-station sorting line)"]
+    FIO["🏭 Factory I/O\nProcess Simulation\n(3-station scene:\n Sorting → Assembly → Packaging)"]
 
     subgraph OT ["⚙️  OT Layer"]
         TIA["PLC — TIA Portal S7-1200\nIEC 61131-3: Ladder + SFC"]
@@ -89,7 +89,7 @@ graph TD
         PBI["Power BI\nExecutive Dashboard (1min refresh)"]
     end
 
-    FIO <-->|"I/O signals via OPC DA"| TIA
+    FIO <-->|"I/O signals via ISO-on-TCP / RFC1006"| TIA
     TIA -->|"OPC-UA protocol"| OPC
     OPC -->|"Tag subscription"| IGN
     OPC -->|"Tag subscription"| NR
