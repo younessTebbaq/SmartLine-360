@@ -34,7 +34,7 @@
 - [Dashboards](#️-dashboards)
 - [Roadmap](#️-roadmap)
 - [About This Project](#-about-this-project)
-- [Author](#-author)
+- [Author](#%E2%80%8D-author)
 - [License](#-license)
 
 ---
