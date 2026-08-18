@@ -83,7 +83,7 @@ flowchart TD
 ## Physical Process Design
 
 The Factory I/O scene models 3 stations (see
-[`factory-io-scenes/`](factory-io-scenes) and the build guide there for
+[`factory-io-scenes/`](../factory-io-scenes/) and the build guide there for
 exact parts and layout):
 
 1. **Station 1 — Infeed & Color Sorting**: an Emitter spawns Raw Material
