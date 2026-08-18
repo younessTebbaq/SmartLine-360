@@ -403,7 +403,7 @@ UM6P · Green Tech Institut (GTI) · Ben Guerir, Morocco
 | | |
 |--|--|
 | 📧 | youness.tebbaq1@gmail.com |
-| 💼 | [www.linkedin.com/in/youness-tebbaq-135634276] |
+| 💼 | www.linkedin.com/in/youness-tebbaq-135634276 |
 | 📍 | Casablanca, Morocco |
 | 🎯 | Seeking PFA internship in industrial automation / IIoT |
 
