@@ -33,36 +33,46 @@ no physical hardware required.
 ## Architecture Diagram
 
 ```mermaid
-flowchart TD
-    subgraph OT["OT Layers"]
-        A[Factory I/O<br/>Simulated Production Line]
-        B[TIA Portal / S7-1200<br/>PLC Control Logic]
-        C[Ignition<br/>SCADA / HMI]
+graph TD
+    FIO["🏭 Factory I/O\nProcess Simulation\n(3-station scene:\n Sorting → Assembly → Packaging)"]
+
+    subgraph OT ["⚙️  OT Layer"]
+        TIA["PLC — TIA Portal S7-1200\nIEC 61131-3: Ladder + SFC"]
+        IGN["SCADA/HMI — Ignition 8.x\nOperator Interface + Historian"]
     end
 
-    subgraph IT["IT Layers"]
-        D[OPC-UA<br/>Protocol Bridge]
-        E[Node-RED<br/>Edge Integration]
-        F[MQTT → Kafka/Redpanda<br/>Messaging]
+    subgraph EDGE ["🔗  Edge & Protocol Layer"]
+        OPC["OPC-UA Server\nPort 4840 — 23 tags @ 500ms"]
+        NR["Node-RED\nEdge Gateway + OEE Logic"]
     end
 
-    subgraph Analytics["Analytics Layers"]
-        G[InfluxDB<br/>Time-Series Storage]
-        H[Grafana<br/>Operational Dashboard]
-        I[Power BI + FastAPI<br/>Business Dashboard + ML]
+    subgraph STREAM ["📨  Streaming Layer"]
+        MQTT["MQTT Broker\nMosquitto / HiveMQ Cloud"]
+        KAFKA["Apache Kafka\nEvent Bus — 4 topics"]
     end
 
-    A <-->|Digital I/O| B
-    B <-->|OPC-UA Server| D
-    D <-->|OPC-UA Client| C
-    D -->|OPC-UA Client| E
-    E -->|MQTT Publish| F
-    F -->|Kafka Consumer| G
-    G --> H
-    G --> I
+    subgraph STORAGE ["💾  Storage & Processing Layer"]
+        IDB["InfluxDB 2.x\nTime-Series Historian"]
+        ML["Python FastAPI\nPredictive Maintenance ML"]
+    end
+
+    subgraph ANALYTICS ["📊  Analytics Layer"]
+        GRAF["Grafana OSS\nOperational Dashboard (1s refresh)"]
+        PBI["Power BI\nExecutive Dashboard (1min refresh)"]
+    end
+
+    FIO <-->|"I/O signals via ISO-on-TCP / RFC1006"| TIA
+    TIA -->|"OPC-UA protocol"| OPC
+    OPC -->|"Tag subscription"| IGN
+    OPC -->|"Tag subscription"| NR
+    NR -->|"MQTT JSON"| MQTT
+    NR -->|"Kafka producer"| KAFKA
+    KAFKA -->|"influxdb-consumer"| IDB
+    KAFKA -->|"ml-consumer"| ML
+    KAFKA -->|"powerbi-consumer"| PBI
+    IDB -->|"Flux queries"| GRAF
+    ML -->|"Predictions → topic"| KAFKA
 ```
-
----
 
 ## Layer-by-Layer Breakdown
 
