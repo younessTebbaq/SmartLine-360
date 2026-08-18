@@ -52,7 +52,7 @@ The answer spans **9 technologies across 7 architecture layers**, connected into
 
 ### Context
 
-This project was developed as part of a **Master's in Industrial Technologies for the Factory of the Future (TIUF)** at [UM6P — Green Tech Institut (GTI)](https://www.um6p.ma), Ben Guerir, Morocco. It serves both as a capstone technical portfolio and as a practical reference for IIoT architecture patterns.
+This project was developed as part of a **Master's in Industrial Technologies for the Factory of the Future (TIUF)** at [UM6P — Green Tech Institut (GTI)](https://um6p.ma/en/masters-degree-industrial-technologies-factory-future-en), Ben Guerir, Morocco. It serves both as a capstone technical portfolio and as a practical reference for IIoT architecture patterns.
 
 ---
 
@@ -194,7 +194,7 @@ graph TD
 ### 1 — Clone the repository
 
 ```bash
-git clone https://github.com/youness-tebbaq/SmartLine-360.git
+git clone https://github.com/younessTebbaq/SmartLine-360.git
 cd SmartLine-360
 ```
 
@@ -405,7 +405,7 @@ UM6P · Green Tech Institut (GTI) · Ben Guerir, Morocco
 | 📧 | youness.tebbaq1@gmail.com |
 | 💼 | www.linkedin.com/in/youness-tebbaq-135634276 |
 | 📍 | Casablanca, Morocco |
-| 🎯 | Seeking PFA internship in industrial automation / IIoT |
+| 🎯 | Industrial automation / IIoT |
 
 **Other projects and experience:**
 - 🚗 Embedded BMS monitoring system — STM32 + CAN bus — Renault Arkana Hybrid (Internship, M-AUTOMOTIV)
