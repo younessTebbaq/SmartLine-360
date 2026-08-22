@@ -11,8 +11,8 @@ Status legend: 🔲 Planned · ⏳ In Progress · ✅ Done · ⚠️ Blocked
 | Task | Planned Start | Planned End | Actual End | Status |
 | --- | --- | --- | --- | --- |
 | Factory I/O Scene — Station 1 | Day 1 | Day 2 | Day 1 | ✅ |
-| Factory I/O Scene — Station 2 | Day 2 | Day 3 |  | ⏳ |
-| Factory I/O Scene — Station 3 | Day 3 | Day 4 |  | 🔲 |
+| Factory I/O Scene — Station 2 | Day 2 | Day 3 | Day 3 | ✅ |
+| Factory I/O Scene — Station 3 | Day 3 | Day 4 |  | ⏳ |
 | TIA Portal PLC logic (all 3 stations) | Day 5 | Day 9 |  | 🔲 |
 | PLC ↔ Factory I/O connection test | Day 10 | Day 11 |  | 🔲 |
 

@@ -98,10 +98,10 @@ Boxes. Keep this in mind for Station 1.
 2. Position it so it can reach both the aligned Base and the aligned Lid, and place the assembled result onto an outfeed conveyor.
 3. Your PLC sequence will step it through: move to Lid → grab → move to Base position → release (assembling Lid onto Base) → return.
 
-**Step 4 — Add quality control**
+**Step 4 — Add quality control (optional)**
 1. From **Sensors**, add a second **Vision Sensor** after the assembly point, configured to check the resulting **Final Product** (e.g. confirm both colors are present/matching).
 
-**Step 5 — Add the reject mechanism**
+**Step 5 — Add the reject mechanism(optional)**
 1. From **Light Load Parts** ⚠️, add another **Pusher** after the Quality Vision Sensor.
 2. It diverts failed assemblies onto a short reject lane — put a **Remover** at the end of that lane.
 
