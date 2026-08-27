@@ -128,7 +128,7 @@ flowchart TD
 ## ✨ Key Features
 
 ### OT Layer
-- **Full PLC program** in IEC 61131-3: Ladder logic for I/O control + SFC (GRAFCET) for production sequence
+- **Full PLC program** in IEC 61131-3: Ladder logic for I/O control 
 - **Auto/Manual/Fault mode management** with proper state machine implementation
 - **OEE data collection** at PLC level: planned time, actual run time, production count, reject count
 - **4 Ignition HMI screens**: production overview, real-time KPIs, active alarms, 24h trend viewer
