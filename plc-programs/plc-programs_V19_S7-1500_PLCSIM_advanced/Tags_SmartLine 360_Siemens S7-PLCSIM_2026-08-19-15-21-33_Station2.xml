@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Tagtable name="SmartLine 360">
+  <!-- exported by FACTORY I/O version 2.5.10 -->
+  <Tag type="Bool" addr="%I0.2">Diffuse Sensor 0</Tag>
+  <Tag type="Bool" addr="%I0.3">Vision Sensor 0</Tag>
+  <Tag type="Bool" addr="%I0.4">Pusher 0 (Back Limit)</Tag>
+  <Tag type="Bool" addr="%I0.5">Pusher 0 (Front Limit)</Tag>
+  <Tag type="Bool" addr="%I0.6">Diffuse Sensor 1</Tag>
+  <Tag type="Bool" addr="%I0.7">Diffuse Sensor 2</Tag>
+  <Tag type="Bool" addr="%I1.0">Diffuse Sensor 3</Tag>
+  <Tag type="Bool" addr="%I1.1">Moving Z</Tag>
+  <Tag type="Bool" addr="%I1.2">Moving X</Tag>
+  <Tag type="Bool" addr="%I1.3">Detected</Tag>
+  <Tag type="Bool" addr="%I1.4">Rotating</Tag>
+  <Tag type="Bool" addr="%Q0.1">Belt Conveyor (2m) 0</Tag>
+  <Tag type="Bool" addr="%Q0.2">Belt Conveyor (2m) 1</Tag>
+  <Tag type="Bool" addr="%Q0.3">Belt Conveyor (4m) 0</Tag>
+  <Tag type="Bool" addr="%Q0.4">Emitter 0 (Emit)</Tag>
+  <Tag type="Bool" addr="%Q0.5">Remover 0 (Remove)</Tag>
+  <Tag type="Bool" addr="%Q0.6">Pusher 0</Tag>
+  <Tag type="Bool" addr="%Q0.7">Emitter 1 (Emit)</Tag>
+  <Tag type="Bool" addr="%Q1.0">Belt Conveyor (2m) 2</Tag>
+  <Tag type="Bool" addr="%Q1.1">Belt Conveyor (4m) 1</Tag>
+  <Tag type="Bool" addr="%Q1.2">Move Z</Tag>
+  <Tag type="Bool" addr="%Q1.3">Move X</Tag>
+  <Tag type="Bool" addr="%Q1.4">Grabe</Tag>
+  <Tag type="Bool" addr="%Q1.5">Rotate Right</Tag>
+  <Tag type="Bool" addr="%Q1.6">Rotate Left</Tag>
+  <Tag type="Bool" addr="%Q1.7">Stop Blade 0</Tag>
+  <Tag type="Bool" addr="%Q2.0">Stop Blade 1</Tag>
+</Tagtable>

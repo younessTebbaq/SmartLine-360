@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Tagtable name="SmartLine 360">
+  <!-- exported by FACTORY I/O version 2.5.10 -->
+  <Tag type="Bool" addr="%I0.2">Diffuse Sensor 0</Tag>
+  <Tag type="Bool" addr="%I0.3">Vision Sensor 0</Tag>
+  <Tag type="Bool" addr="%I0.4">Pusher 0 (Back Limit)</Tag>
+  <Tag type="Bool" addr="%I0.5">Pusher 0 (Front Limit)</Tag>
+  <Tag type="Bool" addr="%I0.6">Diffuse Sensor 1</Tag>
+  <Tag type="Bool" addr="%I0.7">Diffuse Sensor 2</Tag>
+  <Tag type="Bool" addr="%I1.0">Diffuse Sensor 3</Tag>
+  <Tag type="Bool" addr="%I1.1">Diffuse Sensor 4</Tag>
+  <Tag type="Bool" addr="%I1.2">Diffuse Sensor 5</Tag>
+  <Tag type="Bool" addr="%I1.3">Item Detected</Tag>
+  <Tag type="Bool" addr="%I1.4">Rotating</Tag>
+  <Tag type="Bool" addr="%I1.5">FP at entry</Tag>
+  <Tag type="Bool" addr="%I1.6">Pusher Limit</Tag>
+  <Tag type="Bool" addr="%I1.7">Clamped</Tag>
+  <Tag type="Bool" addr="%I2.0">Pallet at entry</Tag>
+  <Tag type="Bool" addr="%I2.1">Pallet Loaded</Tag>
+  <Tag type="Bool" addr="%I2.2">Plate Limit</Tag>
+  <Tag type="Bool" addr="%I2.3">Elevator Moving</Tag>
+  <Tag type="Bool" addr="%Q0.1">Belt Conveyor (2m) 0</Tag>
+  <Tag type="Bool" addr="%Q0.2">Belt Conveyor (2m) 1</Tag>
+  <Tag type="Bool" addr="%Q0.3">Belt Conveyor (4m) 0</Tag>
+  <Tag type="Bool" addr="%Q0.4">Emitter 0 (Emit)</Tag>
+  <Tag type="Bool" addr="%Q0.5">Remover 0 (Remove)</Tag>
+  <Tag type="Bool" addr="%Q0.6">Pusher 0</Tag>
+  <Tag type="Bool" addr="%Q0.7">Emitter 1 (Emit)</Tag>
+  <Tag type="Bool" addr="%Q1.0">Belt Conveyor (2m) 2</Tag>
+  <Tag type="Bool" addr="%Q1.1">Belt Conveyor (2m) 3</Tag>
+  <Tag type="Bool" addr="%Q1.2">Grabe</Tag>
+  <Tag type="Bool" addr="%Q1.3">Rotate Right</Tag>
+  <Tag type="Bool" addr="%Q1.4">Rotate Left</Tag>
+  <Tag type="Bool" addr="%Q1.5">Stop Blade 0</Tag>
+  <Tag type="Bool" addr="%Q1.6">Stop Blade 1</Tag>
+  <Tag type="Bool" addr="%Q1.7">Palletizer_Belt</Tag>
+  <Tag type="Bool" addr="%Q2.0">Push</Tag>
+  <Tag type="Bool" addr="%Q2.1">Clamp</Tag>
+  <Tag type="Bool" addr="%Q2.2">Open Plate</Tag>
+  <Tag type="Bool" addr="%Q2.3">Pallet Load</Tag>
+  <Tag type="Bool" addr="%Q2.4">Emitter 2 (Emit)</Tag>
+  <Tag type="Bool" addr="%Q2.5">Roller Conveyor (4m) 0</Tag>
+  <Tag type="Bool" addr="%Q2.6">Roller Conveyor (4m) 1</Tag>
+  <Tag type="Bool" addr="%Q2.7">Elevator up</Tag>
+  <Tag type="Bool" addr="%Q3.0">Elevator down</Tag>
+  <Tag type="Bool" addr="%Q3.1">Move to Limit</Tag>
+  <Tag type="Bool" addr="%Q3.2">Emitter 2 (Emit)</Tag>
+  <Tag type="Real" addr="%ID30">Z Position</Tag>
+  <Tag type="Real" addr="%ID34">X Position</Tag>
+  <Tag type="Real" addr="%QD30">Move Z</Tag>
+  <Tag type="Real" addr="%QD34">Move X</Tag>
+</Tagtable>

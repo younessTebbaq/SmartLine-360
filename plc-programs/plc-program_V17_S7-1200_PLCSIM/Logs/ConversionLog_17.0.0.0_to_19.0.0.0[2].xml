@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet type='text/xsl' href='ConversionLogFile.xsl'?>
+<LogFile projectName="plc-programs" typeText="Type" messageText="Message" timeText="Time">
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:21:52 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Upgrade started" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <Details ServiceId="80" MessageId="30" Timestamp="9/8/2026 11:21:56 PM" Debug="false">
+    <Text>Reorganization succeed!</Text>
+  </Details>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:21:57 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="CheckRepair lost+found objects" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <Details ServiceId="80" MessageId="30" Timestamp="9/8/2026 11:22:01 PM" Debug="false">
+    <Text>No error is detected.</Text>
+  </Details>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:01 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="CheckRepair missing bidirectional links" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <Details ServiceId="80" MessageId="30" Timestamp="9/8/2026 11:22:01 PM" Debug="false">
+    <Text>No error is detected.</Text>
+  </Details>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:02 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="CheckRepair clear segment flags" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <Details ServiceId="80" MessageId="30" Timestamp="9/8/2026 11:22:02 PM" Debug="false">
+    <Text>No error is detected.</Text>
+  </Details>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:17 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="C0010:1015 Repair 'Comment' for DeviceDataObject 'S7-1200-Station_1'. Comment object had no culture infos." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:17 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="A user with the required engineering right &quot;Upgrade project&quot; has logged on." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Removing outdated system roles." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="The removal of outdated system roles has finished." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Engineering rights that are no longer supported are deleted." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Engineering rights that are no longer supported were deleted." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="System-defined runtime rights are deleted." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Deletion of system runtime rights was completed." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Starting change link between DFR and DFRSet" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Finished change link between DFR and DFRSet" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Starting data conversion workflow for umac entities i.e. System Role, EFR &amp; DFR" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="ERROR: ResourceID 'DataConversionWorkflowForDataDfrSetStartLogMessage' not found in resource of type Siemens.Automation.Umac.Impl.BL.ProjectUpgrade.ProjectConversionMessageLogger" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="ERROR: ResourceID 'DataConversionWorkflowForDataDfrSetFinishedMessage' not found in resource of type Siemens.Automation.Umac.Impl.BL.ProjectUpgrade.ProjectConversionMessageLogger" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:18 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="ERROR: ResourceID 'DataConversionWorkflowForUmacEntitiesFinishedMessage' not found in resource of type Siemens.Automation.Umac.Impl.BL.ProjectUpgrade.ProjectConversionMessageLogger" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:25 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\Main' - Checksum inconsistency for 'Event'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\MHJ-PLC-Lab-Function-S71200' - Checksum inconsistency for 'CallerMemoryLayout; StructureMemoryLayout; General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\Station3' - Checksum inconsistency for 'CallerMemoryLayout; StructureMemoryLayout'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\ControlPanel' - Checksum inconsistency for 'CallerMemoryLayout; StructureMemoryLayout; General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\Station1' - Checksum inconsistency for 'CallerMemoryLayout; StructureMemoryLayout'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\KPIs' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\Station2' - Checksum inconsistency for 'CallerMemoryLayout; StructureMemoryLayout'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\IEC_Timer_0_DB' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\Timer_1' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\Counter_0' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\counter_2' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\counter_1' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\Counter_3' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\DB_ControlPanel' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:26 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\Counter_4' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:27 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\DB50_KPIs' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:27 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\Ton_TotalRunTime' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:27 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\Ton_TotalDowntime' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:27 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\Cnt_TotalRejected' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Warning" Timestamp="9/8/2026 11:22:27 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Project element: '\PLC_1\ProgramBlocksFolder\SystemBlocksFolder\ProgramResourcesFolder\Cnt_LoadedPallets' - Checksum inconsistency for 'General'." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:31 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="The cross-reference information is being converted." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:31 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="The cross-reference information was created successfully." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:31 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="Conversion of the cross-reference information is finished." />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <Details ServiceId="80" MessageId="30" Timestamp="9/8/2026 11:22:32 PM" Debug="false">
+    <Text>Package container 'Siemens.Simatic.OpcUa' was deleted</Text>
+  </Details>
+  <Details ServiceId="80" MessageId="30" Timestamp="9/8/2026 11:22:32 PM" Debug="false">
+    <Text>Package container 'Siemens.Simatic.Lang.S7BSW.V17.0.0.0.NonMandatory' was deleted</Text>
+  </Details>
+  <Details ServiceId="80" MessageId="30" Timestamp="9/8/2026 11:22:32 PM" Debug="false">
+    <Text>Package container 'HW.S71200.CPU.V4.CPU_1211C.MDD_6ES7211-1AE40-0XB0_4.1_14.0.0' was deleted</Text>
+  </Details>
+  <MessageCell ServiceId="Automation-ObjectFrame-Feedbacks" MessageId="ConversionInfoTabProjectSucceeded" MessageClass="Success" Timestamp="9/8/2026 11:22:32 PM">
+    <Number ServiceNumber="80" MessageNumber="34" />
+    <Text FeedbackText="Project 'C:\Users\youness\Desktop\SmartLine-360\plc-programs\System\PEData.plf' was successfully upgraded and saved as project 'C:\Users\youness\Desktop\SmartLine-360\plc-programs_V19_1\System\PEData.plf'." />
+    <Help HelpId="-1" HelpFile="" />
+  </MessageCell>
+  <MessageCell ServiceId="80" MessageId="30" MessageClass="Information" Timestamp="9/8/2026 11:22:33 PM">
+    <Number ServiceNumber="80" MessageNumber="30" />
+    <Text FeedbackText="FinalCheckRemainingErrors" />
+    <Help HelpId="-1" />
+  </MessageCell>
+  <Details ServiceId="80" MessageId="30" Timestamp="9/8/2026 11:22:33 PM" Debug="false">
+    <Text>No error is detected.</Text>
+  </Details>
+</LogFile>
