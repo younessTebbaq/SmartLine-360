@@ -26,7 +26,11 @@ closure, write the summary section at the bottom.
 - **What went well:**
 - **What went wrong / took longer than expected:**
 - **What I'd do differently:**
-- **Technical learning worth remembering:**
+- **Technical learning worth remembering:** 
+  - **Architectural Decoupling:** Connecting IT applications directly to the PLC risks overloading the OT network. Using a middle messaging layer protects the physical production line from heavy IT queries.
+  - **MQTT (The Environment):** Serves as a lightweight edge "bulletin board" ideal for constrained industrial networks. It allows the architecture to bypass the PLC for non-control IIoT data.
+  - **Node-RED (The Worker):** Acts as the active edge gateway. It translates heavy OPC-UA polling into IT-friendly JSON, computes edge logic (like OEE), and bridges the gap by pushing local MQTT data to the enterprise Kafka stream.
+  - **Broker Bridging:** MQTT and Kafka cannot talk directly because they are both passive brokers using different protocols. Node-RED is required as the active client to read from MQTT and act as a producer to push data to Kafka.
 
 ## M4 — Visualization & Closure
 - **What went well:**
