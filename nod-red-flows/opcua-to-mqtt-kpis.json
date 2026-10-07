@@ -1,0 +1,170 @@
+[
+    {
+        "id": "tab_smartline_kpis",
+        "type": "tab",
+        "label": "SmartLine-360 Pipeline",
+        "disabled": false,
+        "info": "OPC-UA DB50_KPIs Read to MQTT Publisher"
+    },
+    {
+        "id": "inject_poll_rate",
+        "type": "inject",
+        "z": "tab_smartline_kpis",
+        "name": "Poll 500ms",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "0.5",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 140,
+        "wires": [
+            [
+                "fn_build_opcua_request"
+            ]
+        ]
+    },
+    {
+        "id": "fn_build_opcua_request",
+        "type": "function",
+        "z": "tab_smartline_kpis",
+        "name": "Set NodeId",
+        "func": "// Trigger reading of DB50_KPIs.ProductionCount\n// Define all DB50_KPIs variables and their corresponding OPC-UA data types\nvar kpis = [\n    { name: \"ProductionCount\", type: \"Int32\" },   // DInt\n    { name: \"LoadedPalletCount\", type: \"Int16\" }, // Int\n    { name: \"SortedCount\", type: \"Int32\" },       // DInt\n    { name: \"SortRate\", type: \"Float\" },          // Real\n    { name: \"CycleTime\", type: \"Float\" },         // Real\n    { name: \"Throughput\", type: \"Float\" },        // Real\n    { name: \"Availability\", type: \"Float\" },      // Real\n    { name: \"Performance\", type: \"Float\" },       // Real\n    { name: \"Yield\", type: \"Float\" },             // Real\n    { name: \"OEE\", type: \"Float\" },               // Real\n    { name: \"ActiveAlarms\", type: \"Int16\" },      // Int\n    { name: \"Downtime\", type: \"Int32\" },          // DInt\n    { name: \"Status\", type: \"UInt16\" }            // Word\n];\n\nvar msgs = [];\n\n// Loop through the list and create a separate message object for each KPI\nfor (var i = 0; i < kpis.length; i++) {\n    msgs.push({\n        topic: 'ns=3;s=\"DB50_KPIs\".\"' + kpis[i].name + '\"',\n        datatype: kpis[i].type,\n        kpiName: kpis[i].name // Pass the custom name forward to the next node\n    });\n}\n\n// Returning an array wrapped in an array sends them as individual sequential messages\nreturn [msgs];",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 140,
+        "wires": [
+            [
+                "opcua_client_reader"
+            ]
+        ]
+    },
+    {
+        "id": "opcua_client_reader",
+        "type": "OpcUa-Client",
+        "z": "tab_smartline_kpis",
+        "endpoint": "opcua_endpoint_plc",
+        "action": "read",
+        "deadbandtype": "a",
+        "deadbandvalue": 1,
+        "time": 10,
+        "timeUnit": "s",
+        "certificate": "n",
+        "localfile": "",
+        "localkeyfile": "",
+        "securitymode": "None",
+        "securitypolicy": "None",
+        "name": "Read S7-1500 DB50",
+        "x": 560,
+        "y": 140,
+        "wires": [
+            [
+                "fn_format_mqtt_payload"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "fn_format_mqtt_payload",
+        "type": "function",
+        "z": "tab_smartline_kpis",
+        "name": "Format JSON Payload",
+        "func": "// Retrieve the value and the custom kpiName passed from the first node\nvar value = msg.payload;\nvar kpiName = msg.kpiName; \n\n// Dynamically set the MQTT topic (e.g., SmartLine360/OEE or SmartLine360/Throughput)\nmsg.topic = \"SmartLine360/\" + kpiName;\n\n// Build the standard IIoT JSON payload\nmsg.payload = {\n    timestamp: new Date().toISOString(),\n    station: \"Line_Overall\",\n    metric: kpiName,\n    value: Number(value)\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 800,
+        "y": 140,
+        "wires": [
+            [
+                "mqtt_out_node",
+                "debug_monitor"
+            ]
+        ]
+    },
+    {
+        "id": "mqtt_out_node",
+        "type": "mqtt out",
+        "z": "tab_smartline_kpis",
+        "name": "Publish to Mosquitto",
+        "topic": "",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "mqtt_broker_local",
+        "x": 1080,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "debug_monitor",
+        "type": "debug",
+        "z": "tab_smartline_kpis",
+        "name": "MQTT Payload Monitor",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1090,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "opcua_endpoint_plc",
+        "type": "OpcUa-Endpoint",
+        "endpoint": "opc.tcp://192.168.0.1:4840",
+        "secpol": "None",
+        "secmode": "None",
+        "none": true,
+        "login": false,
+        "usercert": false
+    },
+    {
+        "id": "mqtt_broker_local",
+        "type": "mqtt-broker",
+        "name": "Docker Mosquitto",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "nodered-edge-gateway",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthQos": "0",
+        "willQos": "0"
+    },
+    {
+        "id": "53d10006f61c7e22",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-contrib-opcua": "0.2.350"
+        }
+    }
+]
