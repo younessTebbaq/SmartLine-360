@@ -9,10 +9,22 @@ This document serves as the master reference guide for the SmartLine-360 project
 ### What is Data Streaming?
 A data streaming platform acts as the central nervous system for your factory's data. Instead of storing data in a local file and moving it later, a streaming platform (like a highly efficient digital post office) catches incoming messages from machinery, organizes them into categories (topics), and instantly routes them to any subscribed system. 
 
+<<<<<<< HEAD
 ### Streaming vs. Batch Processing (The SmartLine-360 Context)
 *   **Batch Processing (The Bucket):** Data is collected over a period of time and moved all at once. For example, downloading a CSV file of Station 1's color sorting rejects at the end of an 8-hour shift.
 *   **Data Streaming (The River):** Data moves continuously, event-by-event, the exact millisecond it is generated. 
 *   **Why SmartLine-360 Needs Streaming:** Physical machinery requires immediate reactions. If a pallet jams on the Station 3 conveyor or the Station 2 gripper fails, an alert must trigger in milliseconds. Batch processing would tell you about a jam hours after it ruined production; data streaming provides the ultra-low latency required to light up the `BeltJam` alarm on your Grafana dashboard instantly.
+=======
+## M3 — IT/Data Pipeline
+- **What went well:**
+- **What went wrong / took longer than expected:**
+- **What I'd do differently:**
+- **Technical learning worth remembering:** 
+  - **Architectural Decoupling:** Connecting IT applications directly to the PLC risks overloading the OT network. Using a middle messaging layer protects the physical production line from heavy IT queries.
+  - **MQTT (The Environment):** Serves as a lightweight edge "bulletin board" ideal for constrained industrial networks. It allows the architecture to bypass the PLC for non-control IIoT data.
+  - **Node-RED (The Worker):** Acts as the active edge gateway. It translates heavy OPC-UA polling into IT-friendly JSON, computes edge logic (like OEE), and bridges the gap by pushing local MQTT data to the enterprise Kafka stream.
+  - **Broker Bridging:** MQTT and Kafka cannot talk directly because they are both passive brokers using different protocols. Node-RED is required as the active client to read from MQTT and act as a producer to push data to Kafka.
+>>>>>>> f89c2a6ebf537adacd0eaefed1eb21875f8ff7fe
 
 ### Apache Kafka vs. Redpanda
 Both platforms do the exact same job (data streaming brokers) and speak the exact same protocol. 
