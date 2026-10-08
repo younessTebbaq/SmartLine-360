@@ -6,7 +6,7 @@ from influxdb_client.client.write_api import ASYNCHRONOUS
 # 1. InfluxDB Configuration (Matches your docker-compose.yml)
 INFLUX_URL = "http://localhost:8086"
 INFLUX_TOKEN = "super-secret-smartline-token"
-INFLUX_ORG = "um6p"
+INFLUX_ORG = "smartline-360"
 INFLUX_BUCKET = "smartline_kpis"
 
 client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)

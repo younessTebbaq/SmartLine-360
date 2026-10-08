@@ -36,7 +36,7 @@ services:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=admin
       - DOCKER_INFLUXDB_INIT_PASSWORD=smartline2026
-      - DOCKER_INFLUXDB_INIT_ORG=um6p
+      - DOCKER_INFLUXDB_INIT_ORG=smartline-360
       - DOCKER_INFLUXDB_INIT_BUCKET=smartline_kpis
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=super-secret-smartline-token
 
