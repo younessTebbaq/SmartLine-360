@@ -326,7 +326,7 @@ Pages:
 
 ### Ignition SCADA — Operator HMI
 
-![Ignition SCADA Operator HMI](assets/screenshots/ignition-hmi.png)
+![Ignition SCADA Operator HMI](assets/screenshots/ignition-scada.png)
 
 Screens:
 - **Production Overview** — live conveyor synoptic, station states
