@@ -307,7 +307,7 @@ SmartLine-360/
 
 ### Grafana — Operational Dashboard (factory floor, 1s refresh)
 
-> *Screenshot coming soon — see `assets/screenshots/grafana-ops.png`*
+![Grafana Operational Dashboard](assets/screenshots/grafana-ops.png)
 
 Panels:
 - **OEE Gauge** — current shift OEE with threshold coloring (red < 65%, amber < 80%, green ≥ 80%)
@@ -317,7 +317,7 @@ Panels:
 
 ### Power BI — Executive Dashboard (management, 1min refresh)
 
-> *Screenshot coming soon — see `assets/screenshots/powerbi-executive.png`*
+![Power BI Executive Dashboard](assets/screenshots/powerbi-executive.png)
 
 Pages:
 - **Shift Overview** — planned vs actual production, OEE, reject rate
@@ -326,15 +326,13 @@ Pages:
 
 ### Ignition SCADA — Operator HMI
 
-> *Screenshot coming soon — see `assets/screenshots/ignition-hmi.png`*
+![Ignition SCADA Operator HMI](assets/screenshots/ignition-hmi.png)
 
 Screens:
 - **Production Overview** — live conveyor synoptic, station states
 - **KPI Screen** — real-time counters, cycle time, OEE gauge
 - **Alarm Screen** — active alarm list, acknowledge/shelve
 - **Trend Screen** — 24-hour historian trends for any tag
-
----
 
 ## 🗺️ Roadmap
 
