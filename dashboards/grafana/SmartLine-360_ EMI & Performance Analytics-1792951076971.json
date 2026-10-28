@@ -5,8 +5,8 @@
     "name": "adlxpv8",
     "namespace": "default",
     "uid": "4a867742-cd09-4571-b388-7a3da5d45bdd",
-    "resourceVersion": "1792241099182985",
-    "generation": 10,
+    "resourceVersion": "1792948583693008",
+    "generation": 45,
     "creationTimestamp": "2026-10-08T17:22:45Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "562110140555264"
@@ -15,7 +15,7 @@
       "grafana.app/createdBy": "user:eg0mkphdiibcwd",
       "grafana.app/saved-from-ui": "Grafana v13.2.2 (1bea008f7e)",
       "grafana.app/updatedBy": "user:eg0mkphdiibcwd",
-      "grafana.app/updatedTimestamp": "2026-10-17T12:44:59Z"
+      "grafana.app/updatedTimestamp": "2026-10-25T17:16:23Z"
     }
   },
   "spec": {
@@ -48,7 +48,7 @@
         "spec": {
           "id": 10,
           "title": "Downtime Root Cause Analysis",
-          "description": "",
+          "description": "**Pareto Fault Distribution**\n\n- **Namespace:** `S7-1500 OPC UA (ns=4)`\n- **Monitored Flags:** `HighSort`, `S2_GripperFault`, `LowProduction`, `EStop`, `Fault`\n\nRanks cumulative fault occurrences to prioritize maintenance actions on the most frequent bottleneck.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -65,7 +65,7 @@
                         "name": "eg0mlercpd7ggc"
                       },
                       "spec": {
-                        "query": "from(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  // Find all measurements that start with \"Alarm_\"\r\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^Alarm_/)\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  // Sum the 1s to get the total time/occurrences the alarm was active\r\n  |> sum() \r\n  // Group them by their measurement name so they appear as separate bars\r\n  |> group(columns: [\"_measurement\"])\r\n  // Sort from highest to lowest (Pareto style)\r\n  |> sort(columns: [\"_value\"], desc: true)"
+                        "query": "import \"strings\"\r\n\r\nfrom(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^Alarm_/)\r\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /${Station:raw}/)\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  // Detect rising edges (0 -> 1 transitions) and sum them to count discrete occurrences\r\n  |> difference(nonNegative: true)\r\n  |> sum()\r\n  // Clean up the name: \"Alarm_S2_GripperFault\" -> \"S2_GripperFault\"\r\n  |> map(fn: (r) => ({ r with Alarm: strings.replaceAll(v: r._measurement, t: \"Alarm_\", u: \"\") }))\r\n  // Ungroup into a single table so Grafana creates one bar per row\r\n  |> group()\r\n  |> keep(columns: [\"Alarm\", \"_value\"])\r\n  |> sort(columns: [\"_value\"], desc: true)"
                       }
                     },
                     "refId": "A",
@@ -91,7 +91,7 @@
                   "calcs": [],
                   "displayMode": "list",
                   "placement": "bottom",
-                  "showLegend": true
+                  "showLegend": false
                 },
                 "orientation": "horizontal",
                 "showValue": "auto",
@@ -101,11 +101,14 @@
                   "mode": "single",
                   "sort": "none"
                 },
+                "xField": "Alarm",
                 "xTickLabelRotation": 0,
                 "xTickLabelSpacing": 0
               },
               "fieldConfig": {
                 "defaults": {
+                  "unit": "suffix: events",
+                  "decimals": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -116,13 +119,14 @@
                     ]
                   },
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "fixed",
+                    "fixedColor": "red"
                   },
                   "custom": {
                     "axisBorderShow": false,
                     "axisCenteredZero": false,
                     "axisColorMode": "text",
-                    "axisLabel": "",
+                    "axisLabel": "Fault Occurrences",
                     "axisPlacement": "auto",
                     "fillOpacity": 80,
                     "gradientMode": "none",
@@ -146,12 +150,299 @@
           }
         }
       },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "id": 11,
+          "title": "Reliability KPIs (MTTR & MTBF)",
+          "description": "**Total Productive Maintenance (TPM) Indicators**\n\n- **MTBF:** `(Planned Time - Downtime) / Fault Events` (Mean Time Between Failures)\n- **MTTR:** `Total Downtime / Fault Events` (Mean Time To Repair)\n\nComputed dynamically via Flux rising-edge detection (`0 ➔ 1`) across all boolean alarm streams.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "eg0mlercpd7ggc"
+                      },
+                      "spec": {
+                        "query": "// 1. Count total rising-edge fault events across all Alarm_ tags\r\nfaultEvents = from(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^Alarm_/)\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> difference(nonNegative: true)\r\n  |> filter(fn: (r) => r[\"_value\"] > 0)\r\n  |> group()\r\n  |> count()\r\n  |> findRecord(fn: (key) => true, idx: 0)\r\n\r\n// Safe divisor: defaults to 1 if 0 faults occurred to avoid NaN\r\nnumFaults = if exists faultEvents._value and faultEvents._value > 0 then float(v: faultEvents._value) else 1.0\r\n\r\n// 2. Fetch latest Downtime and compute MTTR & MTBF\r\nfrom(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"Downtime\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> last()\r\n  |> map(fn: (r) => ({\r\n      _time: r._time,\r\n      MTTR_sec: float(v: r._value) / numFaults,\r\n      // Assumes 600s (10min Demo Shift) planned window minus Downtime\r\n      MTBF_sec: (600.0 - float(v: r._value)) / numFaults\r\n  }))\r\n  |> keep(columns: [\"MTTR_sec\", \"MTBF_sec\"])"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.2.2",
+            "spec": {
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "s",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "id": 12,
+          "title": "Cycle Time Stability vs. Takt Time",
+          "description": "**Micro-Stop & Bottleneck Detection**\n\n- **PLC Tag:** `DB50_KPIs.CycleTime`\n- **Takt Time Threshold:** `8.0 s` (Red Dashed Line)\n\nSpikes above `8.0 s` indicate mechanical hesitation or pneumatic lag at the S2 two-axis pick-and-place cell.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "eg0mlercpd7ggc"
+                      },
+                      "spec": {
+                        "query": "from(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"CycleTime\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> keep(columns: [\"_time\", \"_value\", \"_measurement\"])\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.2.2",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "single",
+                  "sort": "none"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "displayName": "Actual Cycle Time",
+                  "unit": "ms",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 8000,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "dashed"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-13": {
+        "kind": "Panel",
+        "spec": {
+          "id": 13,
+          "title": "IIoT Pipeline Health",
+          "description": "**OT-to-IT Telemetry Observability**\n\n- **Architecture:** `S7-1500 OPC UA ➔ Node-RED ➔ Kafka ➔ InfluxDB`\n- **Ingestion Rate:** Real-time message throughput (`msg/s`)\n- **Stream Lag:** End-to-end latency (`ms`) from PLC sample to database query",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "eg0mlercpd7ggc"
+                      },
+                      "spec": {
+                        "query": "from(bucket: \"smartline_kpis\")\r\n  |> range(start: -1m)\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> group()\r\n  |> count()\r\n  |> map(fn: (r) => ({ \r\n      _value: float(v: r._value) / 60.0, \r\n      _measurement: \"Ingestion Rate (msg/s)\" \r\n  }))\r\n  |> group(columns: [\"_measurement\"])\r\n  |> keep(columns: [\"_value\", \"_measurement\"])"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "influxdb",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "eg0mlercpd7ggc"
+                      },
+                      "spec": {
+                        "query": "from(bucket: \"smartline_kpis\")\r\n  |> range(start: -1m)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"OEE\")\r\n  |> last()\r\n  |> map(fn: (r) => ({\r\n      _value: float(v: uint(v: now()) - uint(v: r._time)) / 1000000.0, _measurement: \"Stream Lag (ms)\"\r\n  }))\r\n  |> keep(columns: [\"_value\", \"_measurement\"])"
+                      }
+                    },
+                    "refId": "B",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.2.2",
+            "spec": {
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "displayName": "${__series.name}",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
       "panel-2": {
         "kind": "Panel",
         "spec": {
           "id": 2,
           "title": "OEE",
-          "description": "",
+          "description": "**Overall Equipment Effectiveness (ISO 22400)**\n\n- **Formula:** `Availability × Performance × Yield`\n- **PLC Tag:** `DB50_KPIs.OEE` (`FC50_KPIs`)\n- **Target:** `≥ 85%` (World-Class Benchmark)\n\nTracks global manufacturing efficiency across S1 Sorting, S2 Assembly, and S3 Palletizing cells.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -187,11 +478,11 @@
             "spec": {
               "options": {
                 "barShape": "flat",
-                "barWidthFactor": 0.5,
+                "barWidthFactor": 0.54,
                 "effects": {
                   "barGlow": false,
                   "centerGlow": false,
-                  "gradient": true
+                  "gradient": false
                 },
                 "endpointMarker": "point",
                 "minVizHeight": 75,
@@ -204,7 +495,7 @@
                   "fields": "",
                   "values": false
                 },
-                "segmentCount": 1,
+                "segmentCount": 63,
                 "segmentSpacing": 0.3,
                 "shape": "gauge",
                 "showThresholdLabels": false,
@@ -215,15 +506,12 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "unit": "percent",
                   "min": 0,
                   "max": 100,
                   "thresholds": {
                     "mode": "percentage",
                     "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
                       {
                         "value": 0,
                         "color": "red"
@@ -234,12 +522,13 @@
                       },
                       {
                         "value": 85,
-                        "color": "semi-dark-green"
+                        "color": "green"
                       }
                     ]
                   },
                   "color": {
-                    "mode": "thresholds"
+                    "mode": "thresholds",
+                    "fixedColor": "green"
                   }
                 },
                 "overrides": []
@@ -253,7 +542,7 @@
         "spec": {
           "id": 3,
           "title": "Performance",
-          "description": "",
+          "description": "**Speed Efficiency**\n\n- **Formula:** `(Actual Production × Ideal Cycle Time) / Operating Time`\n- **PLC Tag:** `DB50_KPIs.Performance`\n- **Target:** `≥ 95%`\n\nEvaluates line operating speed against theoretical design speed, exposing micro-stops and sensor lag.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -317,21 +606,27 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "unit": "percent",
                   "thresholds": {
-                    "mode": "absolute",
+                    "mode": "percentage",
                     "steps": [
                       {
                         "value": 0,
-                        "color": "green"
+                        "color": "red"
                       },
                       {
-                        "value": 80,
-                        "color": "red"
+                        "value": 65,
+                        "color": "#EAB839"
+                      },
+                      {
+                        "value": 85,
+                        "color": "green"
                       }
                     ]
                   },
                   "color": {
-                    "mode": "thresholds"
+                    "mode": "thresholds",
+                    "fixedColor": "green"
                   }
                 },
                 "overrides": []
@@ -345,7 +640,7 @@
         "spec": {
           "id": 4,
           "title": "Availability",
-          "description": "",
+          "description": "**Line Uptime Ratio**\n\n- **Formula:** `(Planned Shift Time - Downtime) / Planned Shift Time`\n- **PLC Tag:** `DB50_KPIs.Availability`\n- **Target:** `≥ 90%`\n\nMeasures the percentage of scheduled shift time the line runs without unscheduled stops or E-Stop events.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -409,21 +704,27 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "unit": "percent",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
                         "value": 0,
-                        "color": "green"
+                        "color": "red"
                       },
                       {
-                        "value": 80,
-                        "color": "red"
+                        "value": 65,
+                        "color": "#EAB839"
+                      },
+                      {
+                        "value": 85,
+                        "color": "green"
                       }
                     ]
                   },
                   "color": {
-                    "mode": "thresholds"
+                    "mode": "thresholds",
+                    "fixedColor": "green"
                   }
                 },
                 "overrides": []
@@ -437,7 +738,7 @@
         "spec": {
           "id": 5,
           "title": "Yield",
-          "description": "",
+          "description": "**First-Pass Quality Rate**\n\n- **Formula:** `Good Assembled Parts / Total Parts Entered`\n- **PLC Tag:** `DB50_KPIs.Yield`\n- **Target:** `≥ 95%`\n\nTracks the ratio of compliant parts passing S1 colour vision sorting through to S3 packaging.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -473,11 +774,11 @@
             "spec": {
               "options": {
                 "barShape": "flat",
-                "barWidthFactor": 0.5,
+                "barWidthFactor": 0.54,
                 "effects": {
                   "barGlow": false,
                   "centerGlow": false,
-                  "gradient": true
+                  "gradient": false
                 },
                 "endpointMarker": "point",
                 "minVizHeight": 75,
@@ -501,16 +802,21 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "unit": "percent",
                   "thresholds": {
-                    "mode": "absolute",
+                    "mode": "percentage",
                     "steps": [
                       {
                         "value": 0,
-                        "color": "green"
+                        "color": "red"
                       },
                       {
-                        "value": 80,
-                        "color": "red"
+                        "value": 65,
+                        "color": "#EAB839"
+                      },
+                      {
+                        "value": 85,
+                        "color": "green"
                       }
                     ]
                   },
@@ -529,7 +835,7 @@
         "spec": {
           "id": 6,
           "title": "Throughput & Sort Rate",
-          "description": "",
+          "description": "**Dynamic Flow & Sorting Correlation**\n\n- **Throughput Tag:** `DB50_KPIs.Throughput` (`parts/min` - Left Axis)\n- **Sort Rate Tag:** `DB50_KPIs.SortRate` (`%` - Right Axis)\n\nCorrelates overall line production velocity against the S1 vision sorting ratio to detect infeed bottlenecks.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -546,7 +852,7 @@
                         "name": "eg0mlercpd7ggc"
                       },
                       "spec": {
-                        "query": "from(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"Throughput\" or r[\"_measurement\"] == \"SortRate\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> yield(name: \"mean\")"
+                        "query": "from(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"Throughput\" or r[\"_measurement\"] == \"SortRate\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\r\n  |> keep(columns: [\"_time\", \"_value\", \"_measurement\"])\r\n  |> yield(name: \"mean\")"
                       }
                     },
                     "refId": "A",
@@ -578,6 +884,7 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "displayName": "${__field.labels._measurement}",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -629,7 +936,42 @@
                     }
                   }
                 },
-                "overrides": []
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "scope": "series",
+                      "options": "Throughput"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "parts/min"
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "left"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "scope": "series",
+                      "options": "SortRate"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percent"
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "right"
+                      }
+                    ]
+                  }
+                ]
               }
             }
           }
@@ -640,7 +982,7 @@
         "spec": {
           "id": 7,
           "title": "Production Counters",
-          "description": "",
+          "description": "**Real-Time Shift Volumetrics**\n\n- **CycleTime:** Latest completed assembly cycle duration (`s`)\n- **LoadedPalletCount:** Full pallets exited at S3 Palletizer\n- **ProductionCount:** Total finished assemblies (`DB50_KPIs`)\n- **SortedCount:** Raw items routed by S1 Colour Sorter",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -657,7 +999,7 @@
                         "name": "eg0mlercpd7ggc"
                       },
                       "spec": {
-                        "query": "from(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"ProductionCount\" or r[\"_measurement\"] == \"LoadedPalletCount\" or r[\"_measurement\"] == \"SortedCount\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> last()"
+                        "query": "from(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"ProductionCount\" or r[\"_measurement\"] == \"SortedCount\" or r[\"_measurement\"] == \"LoadedPalletCount\" or r[\"_measurement\"] == \"CycleTime\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> keep(columns: [\"_time\", \"_value\", \"_measurement\"])\r\n  |> last()"
                       }
                     },
                     "refId": "A",
@@ -676,9 +1018,9 @@
             "spec": {
               "options": {
                 "colorMode": "value",
-                "graphMode": "area",
+                "graphMode": "none",
                 "justifyMode": "auto",
-                "orientation": "auto",
+                "orientation": "horizontal",
                 "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
@@ -688,11 +1030,12 @@
                   "values": false
                 },
                 "showPercentChange": false,
-                "textMode": "value_and_name",
+                "textMode": "auto",
                 "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
+                  "displayName": "${__field.labels._measurement}",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -707,10 +1050,25 @@
                     ]
                   },
                   "color": {
-                    "mode": "thresholds"
+                    "mode": "thresholds",
+                    "fixedColor": "#ad46ff"
                   }
                 },
-                "overrides": []
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "scope": "series",
+                      "options": "CycleTime"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ms"
+                      }
+                    ]
+                  }
+                ]
               }
             }
           }
@@ -720,8 +1078,8 @@
         "kind": "Panel",
         "spec": {
           "id": 8,
-          "title": "The Line State Panel",
-          "description": "",
+          "title": "Line State Panel",
+          "description": "**Machine State Timeline**\n\n- **PLC Tag:** `DB50_KPIs.Status` (`UInt16`)\n- **`0` (Green):** Line Running\n- **`1` (Orange):** Alarm Active\n- **`2` (Red):** Emergency Stop",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -773,6 +1131,7 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "displayName": "Line Status",
                   "mappings": [
                     {
                       "type": "value",
@@ -830,8 +1189,8 @@
         "kind": "Panel",
         "spec": {
           "id": 9,
-          "title": "The Active Alarms Counter",
-          "description": "",
+          "title": "Active Alarms Counter",
+          "description": "**Cumulative Fault & Stoppage Tracker**\n\n- **ActiveAlarms:** `DB50_KPIs.ActiveAlarms` (Current active fault count)\n- **Downtime:** `DB50_KPIs.Downtime` (Cumulative shift stoppage in seconds)",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -848,7 +1207,7 @@
                         "name": "eg0mlercpd7ggc"
                       },
                       "spec": {
-                        "query": "from(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"ActiveAlarms\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> last()"
+                        "query": "from(bucket: \"smartline_kpis\")\r\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\r\n  |> filter(fn: (r) => r[\"_measurement\"] == \"ActiveAlarms\" or r[\"_measurement\"] == \"Downtime\")\r\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\r\n  |> keep(columns: [\"_time\", \"_value\", \"_measurement\"])\r\n  |> last()"
                       }
                     },
                     "refId": "A",
@@ -905,7 +1264,21 @@
                     "mode": "thresholds"
                   }
                 },
-                "overrides": []
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "scope": "series",
+                      "options": "Downtime"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "ms"
+                      }
+                    ]
+                  }
+                ]
               }
             }
           }
@@ -913,174 +1286,191 @@
       }
     },
     "layout": {
-      "kind": "TabsLayout",
+      "kind": "RowsLayout",
       "spec": {
-        "tabs": [
+        "rows": [
           {
-            "kind": "TabsLayoutTab",
+            "kind": "RowsLayoutRow",
             "spec": {
-              "title": "New tab",
+              "title": "Executive Summary",
+              "collapse": false,
+              "fillScreen": false,
               "layout": {
-                "kind": "RowsLayout",
+                "kind": "GridLayout",
                 "spec": {
-                  "rows": [
+                  "items": [
                     {
-                      "kind": "RowsLayoutRow",
+                      "kind": "GridLayoutItem",
                       "spec": {
-                        "title": "Executive Summary",
-                        "collapse": false,
-                        "fillScreen": false,
-                        "layout": {
-                          "kind": "GridLayout",
-                          "spec": {
-                            "items": [
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 24,
-                                  "height": 10,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-2"
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 0,
-                                  "y": 10,
-                                  "width": 9,
-                                  "height": 10,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-3"
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 9,
-                                  "y": 10,
-                                  "width": 8,
-                                  "height": 10,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-5"
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 17,
-                                  "y": 10,
-                                  "width": 7,
-                                  "height": 10,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-4"
-                                  }
-                                }
-                              }
-                            ]
-                          }
+                        "x": 0,
+                        "y": 0,
+                        "width": 3,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-4"
                         }
                       }
                     },
                     {
-                      "kind": "RowsLayoutRow",
+                      "kind": "GridLayoutItem",
                       "spec": {
-                        "title": "Production Flow",
-                        "collapse": false,
-                        "layout": {
-                          "kind": "GridLayout",
-                          "spec": {
-                            "items": [
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 0,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 8,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-6"
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 12,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 8,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-7"
-                                  }
-                                }
-                              }
-                            ]
-                          }
+                        "x": 3,
+                        "y": 0,
+                        "width": 7,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-2"
                         }
                       }
                     },
                     {
-                      "kind": "RowsLayoutRow",
+                      "kind": "GridLayoutItem",
                       "spec": {
-                        "title": "Diagnostics & Root Cause",
-                        "collapse": false,
-                        "layout": {
-                          "kind": "GridLayout",
-                          "spec": {
-                            "items": [
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 6,
-                                  "y": 0,
-                                  "width": 12,
-                                  "height": 8,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-10"
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 0,
-                                  "y": 8,
-                                  "width": 12,
-                                  "height": 8,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-8"
-                                  }
-                                }
-                              },
-                              {
-                                "kind": "GridLayoutItem",
-                                "spec": {
-                                  "x": 12,
-                                  "y": 8,
-                                  "width": 12,
-                                  "height": 8,
-                                  "element": {
-                                    "kind": "ElementReference",
-                                    "name": "panel-9"
-                                  }
-                                }
-                              }
-                            ]
-                          }
+                        "x": 10,
+                        "y": 0,
+                        "width": 3,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-5"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 13,
+                        "y": 0,
+                        "width": 3,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-3"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 16,
+                        "y": 0,
+                        "width": 8,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-13"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "Production Flow",
+              "collapse": false,
+              "layout": {
+                "kind": "AutoGridLayout",
+                "spec": {
+                  "maxColumnCount": 3,
+                  "columnWidthMode": "standard",
+                  "rowHeightMode": "standard",
+                  "items": [
+                    {
+                      "kind": "AutoGridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-6"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "AutoGridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-7"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "AutoGridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-12"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "Diagnostics & Root Cause",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 8,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-10"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 8,
+                        "y": 0,
+                        "width": 4,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-9"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 0,
+                        "width": 4,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-11"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 16,
+                        "y": 0,
+                        "width": 8,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-8"
                         }
                       }
                     }
@@ -1092,7 +1482,20 @@
         ]
       }
     },
-    "links": [],
+    "links": [
+      {
+        "title": "⚡ Open Live Ignition SCADA Control",
+        "type": "link",
+        "icon": "dashboard",
+        "tooltip": "",
+        "url": "http://localhost:8088/data/perspective/client/SmartLine-360",
+        "tags": [],
+        "asDropdown": true,
+        "targetBlank": true,
+        "includeVars": false,
+        "keepTime": false
+      }
+    ],
     "liveNow": false,
     "preload": false,
     "tags": [],
@@ -1117,7 +1520,27 @@
       "fiscalYearStartMonth": 0
     },
     "title": "SmartLine-360: EMI & Performance Analytics",
-    "variables": [],
+    "variables": [
+      {
+        "kind": "CustomVariable",
+        "spec": {
+          "name": "Station",
+          "query": "All Stations : .*, S1 Infeed & Sorting : S1|HighSort|BeltJam, S2 Assembly : S2|GripperFault, S3 Packaging & Palletizing : S3|Elevator|Pallet",
+          "current": {
+            "text": "All Stations",
+            "value": ".*"
+          },
+          "options": [],
+          "multi": false,
+          "includeAll": false,
+          "label": "ISA-95 Cell / Station",
+          "hide": "dontHide",
+          "skipUrlSync": false,
+          "allowCustomValue": true,
+          "valuesFormat": "csv"
+        }
+      }
+    ],
     "preferences": {
       "layout": {
         "kind": "GridLayout",
