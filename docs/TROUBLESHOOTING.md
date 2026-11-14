@@ -19,88 +19,107 @@ Common issues by layer, roughly in the order you'll hit them (`SETUP.md` →
   Run Mode.
 
 **Driver won't connect (grayed-out tags / no green icon)**
-- Confirm PLCSIM (or the real PLC) is actually running and downloaded with
-  the current program.
+- Confirm PLCSIM Advanced (or the real PLC) is actually running and downloaded
+  with the current S7-1500 program.
 - Re-check **File → Driver Configuration → Siemens S7-1200/1500 →
   Configuration** — a mismatched IP/rack/slot is the usual cause.
 - A tag that's grayed out specifically (rather than the whole driver failing)
   usually means that tag doesn't exist on the PLC side, or its data type
   doesn't match — hover over it for the exact error.
 
-**Vision Sensor isn't detecting color as expected**
-- Remember it only recognizes **Raw Material, Product Lid, and Product
-  Base** (Blue/Green/Metal) — not generic Boxes. If your item type doesn't
-  match, no color signal will ever fire.
+**Station 3 palletizer elevator rises empty ("Ghost Cycle")**
+- If the entry sensor triggers the elevator before the pallet fully clears the
+  entry rollers (`DO_S3_Roller4m_B`), the lift goes up empty while the pallet
+  stays jammed on the rollers.
+- **Fix:** Gate vertical motion with a positive seating interlock on input
+  `%I2.1` (`"DI_S3_PalletLoaded"`) paired with a 6-second `TON` watchdog timer.
+  If the pallet does not seat within 6 seconds, block the lift and trigger
+  `Alarm_S3_PalletMisfeed`.
+
+**Station 2 gripper jams on a crooked box, but `CycleTime` and `Throughput` look normal**
+- Because `CycleTime` and `Throughput` are normally updated when a part completes
+  a cycle, a mid-cycle jam leaves the last good values frozen in memory (e.g.,
+  `CycleTime: 7.81 s`, `Throughput: 7.6 parts/min`).
+- **Fix:** Supervise the gantry sequence with a step watchdog timer in the PLC.
+  When the watchdog expires, raise `S2_GripperFault` and immediately write
+  `DB50_KPIs.Throughput := 0.0`.
 
 ---
 
-## TIA Portal / PLCSIM
+## TIA Portal / S7-PLCSIM Advanced
 
 **TIA Portal freezes or the project file corrupts** *(Risk R1)*
 - Don't try to force-recover a corrupted project — restore from your last
-  Git commit instead. This is exactly why committing after every working
-  change matters.
-- If it freezes mid-download to PLCSIM, close both, restart PLCSIM first,
-  then reopen TIA Portal.
+  Git commit or `plc-programs.backup/` instead. This is why committing after
+  every working change matters.
+- If it freezes mid-download to PLCSIM Advanced, close both, restart PLCSIM
+  Advanced first, then reopen TIA Portal.
 
-**PLCSIM won't link to the TIA Portal project**
-- Confirm both are the same PLCSIM type (Standard vs. Advanced) — mixing
-  them is a common cause of silent connection failures.
-- Re-download the program after any tag table change; PLCSIM doesn't always
-  pick up tag renames automatically.
+**PLCSIM Advanced won't link to TIA Portal or Factory I/O when TIA Portal is closed**
+- Confirm you are running **S7-PLCSIM Advanced** (required for external OPC-UA
+  and virtual Ethernet access) rather than Standard PLCSIM.
+- **Subnet Isolation Fix:** The virtual S7-1500 PLC runs on `192.168.0.1`,
+  which Windows cannot route to unless the virtual adapter is on the same
+  subnet (TIA Portal only injects a temporary IP via DCP during downloads).
+  Open Windows Network Connections (`ncpa.cpl`), select **Siemens PLCSIM
+  Virtual Ethernet Adapter → IPv4 Properties**, and assign a permanent static
+  IP of `192.168.0.50` with subnet mask `255.255.255.0`.
+- Re-download the program after any tag table or `DB50_KPIs` change.
+
+**Pressing the panel Reset button wipes out Shift OEE and Availability**
+- Using a single reset bit for both machine fault recovery and shift counters
+  zeros `DB50_KPIs` mid-shift whenever an operator clears an E-Stop or jam.
+- **Fix:** Separate `#Button_FaultReset` (clears latched fault bits and resets
+  actuators only) from `#HMI_ShiftReset` (the sole tag permitted to zero
+  accumulators in `DB50_KPIs`).
+
+**`MTBF` and `MTTR` values are wildly inaccurate**
+- Incrementing `Shift_Failure_Count` while a fault bit is `TRUE` adds to the
+  counter on every PLC scan cycle instead of once per breakdown.
+- **Fix:** Gate `Shift_Failure_Count` with a rising-edge `R_TRIG` detector on
+  `Status = 1` and wrap the `MTBF`/`MTTR` division in an `IF Shift_Failure_Count > 0`
+  guard inside `FC50_KPIs`.
 
 ---
 
-## Ignition
+## Ignition SCADA
 
 **Gateway page won't load at `localhost:8088`**
 - Confirm the Ignition Gateway service is actually running
-  (`services.msc` on Windows) — installing Ignition doesn't always start
-  it automatically.
+  (`services.msc` on Windows) — installing Ignition doesn't automatically start
+  it on every boot.
 
 **OPC-UA connection shows disconnected**
-- Verify the S7-1200's OPC-UA server is enabled in TIA Portal (CPU
-  Properties → OPC UA) and that the program was re-downloaded after
-  enabling it.
-- Check that Ignition's OPC-UA connection URL/endpoint matches exactly
-  what TIA Portal reports (including port).
+- Verify the S7-1500's built-in OPC-UA server is enabled in TIA Portal (CPU
+  Properties → OPC UA → port `4840`, namespace `ns=4`) and that the program was
+  re-downloaded to PLCSIM Advanced after enabling it.
+- Check that Ignition's OPC-UA connection endpoint matches what TIA Portal and
+  UaExpert report (`opc.tcp://192.168.0.1:4840`).
+
+**Alarm fires when the machine is healthy and clears when jammed (Inverted Alarm)**
+- In the Ignition Tag Editor, adding an alarm with mode `Equal` defaults to
+  `Setpoint = 0`, which evaluates as active when the boolean tag is `0` (normal).
+- **Fix:** Change the alarm configuration to `Mode = Equal` and `Setpoint = 1`.
+
+**Station synoptic stays green during an active fault**
+- If color bindings check the running conveyor tag first, a running roller overrides
+  the fault color.
+- **Fix:** Use a priority-ordered nested expression on `S3_Palletizer` so the
+  fault state takes precedence:
+  `if({[default]Alarm_S3_PalletMisfeed}, "#FF0000", if({[default]Outputs/DO_S3_Roller4m_B}, "#43A047", "#B0B7C0"))`
 
 **Demo license keeps resetting your work**
-- Expected behavior on the free tier (resets every 2 hours). Save/export
-  your project frequently rather than relying on the running Gateway state.
+- Expected behavior on the trial tier (resets every 2 hours). Save and export
+  your project to `ignition-projects/` frequently.
 
 ---
 
-## Docker / Kafka / Redpanda / InfluxDB / Grafana
+## Docker / Mosquitto / Redpanda / InfluxDB / Grafana
 
 **Container fails to start** *(Risk R2)*
 ```bash
 docker compose logs <service-name>
 ```
-Read the actual error before restarting blindly — most failures are a port
-conflict (something else already using 8086, 3000, 9092, etc.) or a missing
-environment variable.
-
-**Everything is slow / laptop fans spinning constantly** *(Risk R3)*
-- You likely have TIA Portal + Factory I/O + the full Docker stack running
-  at once. Stop containers you're not actively using:
-  `docker compose stop <service-name>`
-- Prefer Redpanda over full Kafka+Zookeeper if you haven't already — it's
-  materially lighter.
-
-**Data disappears after `docker compose down`** *(Risk R5)*
-- You (or a script) likely ran `docker compose down -v`, which deletes
-  volumes. Plain `docker compose down` preserves data. Check your compose
-  file defines named volumes for `influxdb` and `grafana` data paths.
-
-**Grafana dashboard shows "No data"**
-- Check the data source test (Settings → Data Sources → Test) first —
-  if that fails, the issue is InfluxDB connectivity/credentials, not the
-  dashboard itself.
-- Confirm the measurement/field names in your panel queries match what the
-  consumer is actually writing (see the "contract" table in
-  `DEVELOPMENT.md`) — a silent rename anywhere upstream breaks this.
-
 ---
 
 ## Node-RED

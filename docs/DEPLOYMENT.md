@@ -1,32 +1,44 @@
 # Deployment — SmartLine 360
 
-How to bring the full stack up, in the right order, and verify each layer
-before moving to the next.
+How to bring the full 9-layer stack up in the right order and verify each
+layer before moving to the next.
 
-## Startup order
+## Startup Order
 
-Later layers depend on earlier ones being live — start in this order:
+Later layers depend on earlier ones being live — start in this sequence:
 
-1. **Factory I/O** — open the scene, stay in Edit Mode for now.
-2. **TIA Portal / PLCSIM** — start the PLC simulation.
-3. **Connect Factory I/O to the PLC** — File → Driver Configuration → Siemens S7-1200/1500 → Connect. Confirm green connection icon.
-4. **Factory I/O → Run Mode** (`F5`) — the physical simulation is now live and PLC-controlled.
-5. **Ignition Gateway** — start it, open the project, confirm OPC-UA tags are live (not stale/grey).
-6. **Docker Compose stack** (Kafka/Redpanda, InfluxDB, Grafana) — see below.
-7. **Node-RED** — start it (Docker or standalone), deploy the OPC-UA→MQTT and MQTT→Kafka flows.
-8. **Grafana** — dashboards should now start showing live data.
-9. **Power BI** — open the `.pbix`, refresh the data connection.
+1. **Windows Virtual Network Check** — confirm `Siemens PLCSIM Virtual Ethernet Adapter` has static IPv4 `192.168.0.50` (`255.255.255.0`).
+2. **S7-PLCSIM Advanced & TIA Portal** — start the S7-1500 simulation (`192.168.0.1`), download the program from `plc-programs/`, and put the CPU in `RUN`.
+3. **Factory I/O** — open the scene in `factory-io-scenes/`, connect the **Siemens S7-1200/1500** driver (confirm green icon), and switch to **Run Mode** (`F5`).
+4. **Ignition Gateway** — start the service (`http://localhost:8088`), open the Perspective project from `ignition-projects/`, and verify OPC-UA tags (`ns=4`, port `4840`) are live.
+5. **Docker Compose IT Stack** — start Mosquitto, Redpanda, InfluxDB, and Grafana (`cd docker && docker compose up -d`).
+6. **Node-RED** — start Node-RED (`http://localhost:1880`), import the flow from `nod-red-flows/`, and click **Deploy**.
+7. **InfluxDB Kafka Consumer** — from the repository root, run `python influxdb-consumer.py` to stream events from Redpanda (`production-events`) into InfluxDB (`smartline_kpis`).
+8. **Grafana & Power BI** — open Grafana (`http://localhost:3000`, `1 s` refresh, JSON models stored in `dashboards/`) and Power BI Desktop (`power-bi/`, `60 s` refresh).
 
-## Docker Compose — IT layer
+---
 
-`docker/docker-compose.yml` (starting point — adjust images/versions as you finalize them):
+## Docker Compose — IT Layer
+
+`docker/docker-compose.yml`:
 
 ```yaml
 version: "3.8"
 
 services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: smartline-mqtt
+    ports:
+      - "1883:1883"
+    command: >
+      sh -c "echo 'listener 1883\nallow_anonymous true' > /mosquitto/config/mosquitto.conf && /usr/sbin/mosquitto -c /mosquitto/config/mosquitto.conf"
+    volumes:
+      - mosquitto-data:/mosquitto/data
+
   redpanda:
     image: redpandadata/redpanda:latest
+    container_name: smartline-kafka
     command:
       - redpanda start
       - --smp 1
@@ -34,7 +46,7 @@ services:
       - --overprovisioned
       - --node-id 0
       - --kafka-addr PLAINTEXT://0.0.0.0:9092
-      - --advertise-kafka-addr PLAINTEXT://redpanda:9092
+      - --advertise-kafka-addr PLAINTEXT://127.0.0.1:9092
     ports:
       - "9092:9092"
     volumes:
@@ -42,92 +54,80 @@ services:
 
   influxdb:
     image: influxdb:2.7
+    container_name: smartline-historian
     ports:
       - "8086:8086"
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USER}
-      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_PASSWORD}
-      - DOCKER_INFLUXDB_INIT_ORG=smartline360
-      - DOCKER_INFLUXDB_INIT_BUCKET=station_data
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN}
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_USER:-admin}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_PASSWORD:-smartline2026}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_ORG:-um6p}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_BUCKET:-smartline_kpis}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_TOKEN:-super-secret-smartline-token}
     volumes:
       - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
 
   grafana:
     image: grafana/grafana:latest
+    container_name: smartline-dashboard
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-smartline}
     volumes:
       - grafana-data:/var/lib/grafana
     depends_on:
       - influxdb
 
-  node-red:
-    image: nodered/node-red:latest
-    ports:
-      - "1880:1880"
-    volumes:
-      - node-red-data:/data
-    depends_on:
-      - redpanda
-
 volumes:
+  mosquitto-data:
   redpanda-data:
   influxdb-data:
+  influxdb-config:
   grafana-data:
-  node-red-data:
 ```
 
-Store secrets in `docker/.env` (gitignored — never commit this file):
-```
-INFLUXDB_USER=admin
-INFLUXDB_PASSWORD=changeme
-INFLUXDB_TOKEN=changeme-generate-a-real-token
-GRAFANA_PASSWORD=changeme
-```
+Bring the stack up or down:
 
-Bring it up / down:
 ```bash
 cd docker
 docker compose up -d      # start everything in the background
 docker compose ps         # confirm all services are Up
 docker compose logs -f    # tail logs across all services
-docker compose down       # stop everything (data persists in the named volumes)
-docker compose down -v    # stop AND wipe all data — use with care
+docker compose down       # stop containers (data persists in named volumes)
+docker compose down -v    # stop AND wipe all volumes — use with care
 ```
+
+---
 
 ## Connecting Grafana to InfluxDB
 
-1. In Grafana, go to **Connections → Data sources → Add data source → InfluxDB**.
+1. In Grafana (`http://localhost:3000`), go to **Connections -> Data sources -> Add data source -> InfluxDB**.
 2. Query language: **Flux**.
-3. URL: `http://influxdb:8086` (container-to-container name, not `localhost`, since both run in the same Compose network).
-4. Organization: `smartline360`, Token: the value of `INFLUXDB_TOKEN`, Default bucket: `station_data`.
-5. Save & test — it should confirm the connection.
+3. URL: `http://influxdb:8086` (internal Docker network hostname).
+4. Organization: `um6p`, Default bucket: `smartline_kpis`, Token: value of `INFLUXDB_TOKEN`.
+5. Click **Save & test** to verify connectivity, then import the dashboard JSON from `dashboards/`.
 
-## Verifying each layer is actually live (not just "started")
+---
 
-| Layer | How to verify |
+## Verifying Each Layer is Live
+
+| Layer | How to Verify |
 | --- | --- |
-| Factory I/O ↔ PLC | Green connection icon in the Driver window; forcing a tag in Factory I/O changes the corresponding PLC tag |
-| Ignition | Tag browser shows live (not grey/stale) values |
-| Node-RED | Debug panel shows messages flowing on deploy |
-| Kafka/Redpanda | `docker compose logs redpanda` shows no repeated connection errors from producers/consumers |
-| InfluxDB | A manual Flux query in its UI returns recent points |
-| Grafana | Dashboard panels update within ~2 seconds of a manual tag change in Factory I/O |
+| Factory I/O <-> S7-1500 | Green driver icon in Factory I/O; sensor changes update PLC tags in TIA Portal online monitoring |
+| OPC-UA Server (`ns=4`) | UaExpert connects to `opc.tcp://192.168.0.1:4840` and displays live values for all 23 tags |
+| Ignition SCADA | Tag Browser shows Good quality; `S3_Palletizer` changes color according to roller/fault state |
+| Node-RED & Mosquitto | `MQTT Payload Monitor` debug node prints formatted JSON every `1000 ms`; `kafka` node shows green `connected to 127.0.0.1:9092` |
+| `influxdb-consumer.py` & InfluxDB | Consumer terminal logs incoming `production-events` messages; InfluxDB Data Explorer returns points in `smartline_kpis` |
+| Grafana | Panels update every second with ~`263 ms` stream lag; `$Station` dropdown filters alarms cleanly |
 
-## Shutdown procedure
+---
 
-1. Stop Factory I/O Run Mode (return to Edit Mode) before closing, to avoid losing unsaved scene state.
-2. Stop the PLC simulation in TIA Portal / PLCSIM.
-3. `docker compose down` (without `-v`, to keep your data).
-4. Close Ignition Gateway and Node-RED if running standalone.
+## Shutdown Procedure
 
-## Environments
-
-For a solo demo project, one environment is enough — but keep the `.env`
-file separate from `docker-compose.yml` so credentials never end up in Git
-history, and so you could point the same compose file at different
-credentials later (e.g. a "clean demo" reset vs. your working data).
+1. Switch Factory I/O back to **Edit Mode** before closing.
+2. Stop `influxdb-consumer.py` (`Ctrl + C`).
+3. Power off or stop the S7-1500 instance in **S7-PLCSIM Advanced** (retentive `DB50_KPIs` values are preserved).
+4. Run `docker compose down` (without `-v`) inside `docker/`.

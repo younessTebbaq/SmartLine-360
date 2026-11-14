@@ -1,12 +1,13 @@
 # KPIs Guide — SmartLine 360
 
 This document defines every KPI in the SmartLine 360 project: what it
-means, how it is computed in the PLC, which PLC tag stores it, and where
-it appears on the dashboards.
+means, how it is computed in the S7-1500 PLC, which tag in `DB50_KPIs`
+stores it, and where it appears on the dashboards.
 
-The KPIs are computed by `FC50_KPIs` (SCL) in the S7-1500 PLC program
-and stored in the global data block `DB50_KPIs`. They are exposed to
-the rest of the stack via the OPC-UA server.
+The KPIs are computed deterministically by `FC50_KPIs` (SCL) in the
+Siemens S7-1500 PLC program and stored in the global data block `DB50_KPIs`.
+They are exposed to Ignition SCADA and Node-RED via the built-in OPC-UA
+server (`ns=4`, port `4840`).
 
 ---
 
@@ -14,22 +15,9 @@ the rest of the stack via the OPC-UA server.
 
 - [KPI Storage — DB50_KPIs](#kpi-storage--db50_kpis)
 - [KPI Computation — FC50_KPIs](#kpi-computation--fc50_kpis)
+- [Core SCL Implementations](#core-scl-implementations)
 - [KPI Definitions](#kpi-definitions)
-  1. [Production Count](#1-production-count)
-  2. [Reject Count](#2-reject-count)
-  3. [Reject Rate](#3-reject-rate)
-  4. [Cycle Time](#4-cycle-time)
-  5. [Throughput](#5-throughput)
-  6. [Availability](#6-availability)
-  7. [Performance](#7-performance)
-  8. [Quality](#8-quality)
-  9. [OEE](#9-oee)
-  10. [Active Alarms](#10-active-alarms)
-  11. [Downtime](#11-downtime)
-  12. [Status](#12-status)
-  13. [Timestamp](#13-timestamp)
-- [Input Tags](#input-tags)
-- [Data Flow](#data-flow)
+- [Supervised Watchdog Alarms](#supervised-watchdog-alarms)
 - [Dashboard Mapping](#dashboard-mapping)
 - [OPC-UA Exposure](#opc-ua-exposure)
 - [Testing Checklist](#testing-checklist)
@@ -38,48 +26,83 @@ the rest of the stack via the OPC-UA server.
 
 ## KPI Storage — DB50_KPIs
 
-All KPIs live in the global data block `DB50_KPIs`.
+All KPIs and shift accumulators live in the global data block `DB50_KPIs`.
 
 | Field | Type | Retain | Meaning |
 | --- | --- | --- | --- |
-| `ProductionCount` | DInt | Yes | Total finished items produced |
-| `LoadedPalletCount` | Int | Yes | Total finished pallets at exit |
-| `SortedCount` | DInt | No | Number of blue lids sorted out |
-| `SortRate` | Real | No | Sort percentage |
-| `CycleTime` | Real | No | Time between two consecutive items (ms) |
-| `Throughput` | Real | No | Items per minute |
-| `Availability` | Real | No | Run time ÷ planned time × 100 |
-| `Performance` | Real | No | Actual rate ÷ ideal rate × 100 |
-| `Yield` | Real | No | (total − sorted) / total |
-| `OEE` | Real | No | Overall Equipment Effectiveness |
-| `ActiveAlarms` | Int | No | Number of active alarms |
-| `Downtime` | DInt | No | Total downtime in seconds |
-| `Status` | Word | No | 0 = OK, 1 = Fault, 2 = E-Stop |
-| `Timestamp` | DTL | No | Current PLC time |
+| `ProductionCount` | DInt | Yes | Total finished items produced across the line |
+| `LoadedPalletCount` | Int | Yes | Total finished pallets discharged at Station 3 |
+| `SortedCount` | DInt | Yes | Number of items diverted at Station 1 |
+| `SortRate` | Real | No | Percentage of items diverted at Station 1 ($\%$) |
+| `CycleTime` | Real | No | Time between two consecutive item completions ($\text{s}$ / $\text{ms}$) |
+| `Throughput` | Real | No | Items per minute (forced to `0.0` when `S2_GripperFault` is active) |
+| `Availability` | Real | No | $\text{RunTime} \div \text{PlannedTime} \times 100$ |
+| `Performance` | Real | No | $\text{ActualRate} \div \text{IdealRate} \times 100$ |
+| `Yield` | Real | No | $(\text{ProductionCount} - \text{SortedCount}) \div \text{ProductionCount} \times 100$ |
+| `OEE` | Real | No | $(\text{Availability} \times \text{Performance} \times \text{Yield}) \div 10000.0$ |
+| `Shift_Failure_Count` | Int | Yes | Discrete breakdown counter incremented on fault rising edge (`R_TRIG`) |
+| `MTBF` | Real | No | Mean Time Between Failures ($\text{s}$) |
+| `MTTR` | Real | No | Mean Time To Repair ($\text{s}$) |
+| `ActiveAlarms` | Int | No | Count of currently active alarm flags |
+| `Downtime` | DInt | Yes | Cumulative shift downtime in seconds |
+| `Status` | Word | No | `0` = Normal, `1` = Fault Active, `2` = E-Stop Active |
+| `Timestamp` | DTL | No | Current PLC system time (`RD_LOC_T`) |
 
-**Retain policy.** Counters and accumulated time use `Retain = Yes` so
-they survive a PLC power cycle. Computed KPIs use `Retain = No` because
-they are recomputed on every scan.
+**Retain and Reset Policy:**
+- Shift accumulators (`ProductionCount`, `LoadedPalletCount`, `SortedCount`, `RunTime`, `Downtime`, `Shift_Failure_Count`) use `Retain = Yes` so shift totals survive a PLC power cycle or a `STOP -> RUN` transition.
+- **Machine Fault Reset (`#Button_FaultReset`)** clears active alarms and resets pneumatic actuators to `Ready` without modifying `DB50_KPIs`.
+- **Shift Reset (`#HMI_ShiftReset`)** is the only tag permitted to zero shift accumulators at the end of a production shift.
 
 ---
 
 ## KPI Computation — FC50_KPIs
 
-`FC50_KPIs` is an SCL function block called once per scan from OB1.
+`FC50_KPIs` is an SCL function called on every scan from `OB1`.
 
-| Input parameter | Type | Source |
+| Input Parameter | Type | Source |
 | --- | --- | --- |
-| `CycleCount` | DInt | `Final_Product_Count` — production counter CV |
-| `RejectCount` | DInt | `TotalItemsRejected` — reject counter CV |
-| `RunTime` | DInt | `TotalRunTime` — run-time TON ET |
-| `PlannedTime` | DInt | `ShiftPlannedTime` — setpoint |
-| `IdealRate` | Real | `IdealRate` — setpoint |
-| `ActiveAlarmCount` | Int | `ActiveAlarmCount` — alarm counter |
-| `Downtime` | DInt | `TotalDowntime` — downtime TON ET |
-| `EStopActive` | Bool | `EStop` — raw E-Stop input |
-| `CurrentTimeIn` | DInt | `CurrentTime` — clock TON ET |
+| `CycleCount` | DInt | Total production counter CV |
+| `SortedCount` | DInt | Station 1 diversion counter CV |
+| `RunTime` | DInt | Cumulative run-time timer ET ($\text{ms}$) |
+| `PlannedTime` | DInt | Shift planned time setpoint ($\text{s}$) |
+| `Downtime` | DInt | Cumulative downtime timer ET ($\text{s}$) |
+| `IdealRate` | Real | Target production rate setpoint |
+| `EStop` | Bool | Physical E-Stop input status |
 
-The function writes all computed values to `DB50_KPIs`.
+---
+
+## Core SCL Implementations
+
+### 1. Availability & OEE Calculation
+
+```scl
+// Availability & OEE
+IF #PlannedTime > 0 THEN
+    // Divide RunTime by 1000.0 to convert milliseconds to seconds
+    "DB50_KPIs".Availability := 100.0 * (DINT_TO_REAL(#RunTime) / 1000.0) / DINT_TO_REAL(#PlannedTime);
+END_IF;
+
+"DB50_KPIs".OEE := ("DB50_KPIs".Availability * "DB50_KPIs".Performance * "DB50_KPIs".Yield) / 10000.0;
+```
+
+### 2. Edge-Triggered MTBF & MTTR Calculation
+
+```scl
+// 1. Count discrete failure events (Rising Edge of a fault)
+#Fault_Trigger(CLK := ("DB50_KPIs".Status = 1));
+IF #Fault_Trigger.Q THEN
+    "DB50_KPIs".Shift_Failure_Count := "DB50_KPIs".Shift_Failure_Count + 1;
+END_IF;
+
+// 2. Prevent division by zero
+IF "DB50_KPIs".Shift_Failure_Count > 0 THEN
+    "DB50_KPIs".MTTR := DINT_TO_REAL("DB50_KPIs".Downtime) / INT_TO_REAL("DB50_KPIs".Shift_Failure_Count);
+    "DB50_KPIs".MTBF := (DINT_TO_REAL(#RunTime) / 1000.0) / INT_TO_REAL("DB50_KPIs".Shift_Failure_Count);
+ELSE
+    "DB50_KPIs".MTTR := 0.0;
+    "DB50_KPIs".MTBF := DINT_TO_REAL(#RunTime) / 1000.0;
+END_IF;
+```
 
 ---
 
@@ -247,107 +270,47 @@ The function writes all computed values to `DB50_KPIs`.
 | **Computation** | Inside `FC50_KPIs` |
 | **Dashboard** | Both |
 
----
-
-## Input Tags
-
-These tags must exist in the PLC tag table for `FC50_KPIs` to work:
-
-| Tag | Address | Type | Retain | Purpose |
-| --- | --- | --- | --- | --- |
-| `TotalItemsRejected` | %QD42 | DInt | Yes | Reject counter CV |
-| `TotalRunTime` | %QD46 | DInt | Yes | Run-time TON ET |
-| `ShiftPlannedTime` | %MW50 | Int | Yes | Planned production time (s) |
-| `IdealRate` | %MD52 | Real | No | Ideal rate (items/s) |
-| `ActiveAlarmCount` | %MW56 | Int | No | Active alarm count |
-| `TotalDowntime` | %QD58 | DInt | Yes | Downtime TON ET |
-| `RejectPulse` | %M2.0 | Bool | No | One-shot on reject event |
-| `ProductionPulse` | %M2.1 | Bool | No | One-shot on production event |
-| `RunTimeEnable` | %M2.2 | Bool | No | Run-time TON enable |
-| `DowntimeEnable` | %M2.3 | Bool | No | Downtime TON enable |
-| `LastCycleCount` | %MD60 | DInt | No | Edge detection memory |
-| `LastItemTime` | %MD64 | DInt | No | Last item timestamp |
-| `CurrentTime` | %MD68 | DInt | No | Clock TON ET |
+### 15. MTBF & MTTR (`DB50_KPIs.MTBF`, `DB50_KPIs.MTTR`)
+- **MTBF (Mean Time Between Failures):** Cumulative operating time divided by discrete rising-edge failure count.
+- **MTTR (Mean Time To Repair):** Cumulative downtime divided by discrete rising-edge failure count.
 
 ---
 
-## Data Flow
+## Supervised Watchdog Alarms
 
-```
-FC2 (Station 2)          FC3 (Station 3)
-    │ RejectPulse             │ ProductionPulse
-    ▼                         ▼
-Cnt_TotalRejected       Cnt_LoadedPallets
-    │                         │
-    ▼                         ▼
-TotalItemsRejected      Final_Product_Count
-    │                         │
-    └─────────────┬─────────────┘
-                  ▼
-          FC50_KPIs (SCL)
-                  │
-                  ▼
-          DB50_KPIs (Global DB)
-                  │
-                  ▼
-          OPC-UA Server
-                  │
-          ┌───────┼───────┐
-          ▼       ▼       ▼
-      Ignition  Node-RED  InfluxDB
-        HMI      → MQTT     → Grafana
-                      → Kafka
-                      → Power BI
-```
+| Alarm Tag | Station | Trigger Condition |
+| --- | --- | --- |
+| `HighSort` (`Alarm_HighSort`) | Station 1 | Sorting diversion rate exceeds normal threshold |
+| `S2_GripperFault` (`Alarm_S2_GripperFault`) | Station 2 | Step watchdog expires when a crooked box blocks the vacuum gripper mid-cycle; forces `Throughput := 0.0` |
+| `Alarm_S3_PalletMisfeed` | Station 3 | 6-second `TON` watchdog expires if pallet fails to reach positive seating sensor `%I2.1` (`"DI_S3_PalletLoaded"`) inside `S3_Palletizer` |
+| `Alarm_EStop` | Line-Wide | Physical Emergency Stop activated (`Status = 2`) |
+| `Alarm_LowProduction` | Line-Wide | Throughput drops below target threshold |
 
 ---
 
 ## Dashboard Mapping
 
-| KPI | Grafana (operational, 1 s) | Power BI (business, 1 min) |
-| --- | --- | --- |
-| OEE | Gauge + trend line | Trend chart |
-| Throughput | Line chart | Line chart |
-| Cycle Time | Line chart | — |
-| Reject Rate | Line chart | Line chart |
-| Availability | Stat panel | Stat panel |
-| Performance | Stat panel | Stat panel |
-| Quality | Stat panel | Stat panel |
-| Production Count | Stat panel | Bar chart |
-| Reject Count | Stat panel | Bar chart |
-| Downtime | — | Stat panel |
-| Active Alarms | Stat panel + alarm list | Stat panel |
-| Status | Colored indicator | — |
+| KPI / Diagnostic | Ignition SCADA | Grafana (1s Refresh) | Power BI (60s Refresh) |
+| --- | --- | --- | --- |
+| OEE, Availability, Performance, Yield | KPI Screen gauges | Gauges + trend lines | Shift Overview & Weekly Benchmark |
+| Cycle Time & Throughput | KPI Screen | Real-time line trend | Shift averages |
+| Production & Loaded Pallet Counts | Synoptic counters | Stat panels | Planned vs. Actual bar charts |
+| MTBF & MTTR | — | Reliability stat panels | Shift reliability summary |
+| Active Fault State & Chronology | 3-state synoptic + Alarm table | `Alarm Chronology & State` (State Timeline) | Downtime minutes lost |
+| Fault Frequency | Alarm history | `Shift Fault Occurrences` (Pareto bar chart) | Quality & downtime breakdown |
 
 ---
 
 ## OPC-UA Exposure
 
-The following `DB50_KPIs` fields are exposed via the S7-1500 OPC-UA
-server. The full node path follows the convention
-`SmartLine360/KPIs/<FieldName>`:
-
-| OPC-UA Node | PLC Tag | Type |
-| --- | --- | --- |
-| `SmartLine360/KPIs/ProductionCount` | `DB50_KPIs.ProductionCount` | DInt |
-| `SmartLine360/KPIs/RejectCount` | `DB50_KPIs.RejectCount` | DInt |
-| `SmartLine360/KPIs/RejectRate` | `DB50_KPIs.RejectRate` | Real |
-| `SmartLine360/KPIs/CycleTime` | `DB50_KPIs.CycleTime` | Real |
-| `SmartLine360/KPIs/Throughput` | `DB50_KPIs.Throughput` | Real |
-| `SmartLine360/KPIs/Availability` | `DB50_KPIs.Availability` | Real |
-| `SmartLine360/KPIs/Performance` | `DB50_KPIs.Performance` | Real |
-| `SmartLine360/KPIs/Quality` | `DB50_KPIs.Quality` | Real |
-| `SmartLine360/KPIs/OEE` | `DB50_KPIs.OEE` | Real |
-| `SmartLine360/KPIs/ActiveAlarms` | `DB50_KPIs.ActiveAlarms` | Int |
-| `SmartLine360/KPIs/Downtime` | `DB50_KPIs.Downtime` | DInt |
-| `SmartLine360/KPIs/Status` | `DB50_KPIs.Status` | Word |
-| `SmartLine360/KPIs/Timestamp` | `DB50_KPIs.Timestamp` | DateAndTime |
+All `DB50_KPIs` fields and boolean alarm bits (23 tags total) are exposed via the S7-1500 OPC-UA server on port `4840` under namespace `ns=4` (e.g., `ns=4;s="DB50_KPIs"."OEE"`).
 
 ---
 
 ## Testing Checklist
 
-1. [ ] All input tags from the [Input Tags](#input-tags) table exist in the tag table
-2. [ ] `DB50_KPIs` is created with all fields and correct retain settings
-3. [ ] `FC50_KPIs` compiles with no errors
-4. [ ] OB1 calls `FC5
+1. [x] All input tags exist in the S7-1500 PLC tag table with `Retain` enabled on shift accumulators.
+2. [x] `DB50_KPIs` compiles and exposes all 23 tags via the OPC-UA server (`ns=4`, port `4840`).
+3. [x] `FC50_KPIs` executes in `OB1` with division-by-zero guards on `PlannedTime` and `Shift_Failure_Count`.
+4. [x] Pressing the control panel fault reset (`#Button_FaultReset`) clears active faults without resetting `OEE` or `Availability`.
+5. [x] Jamming the Station 2 gripper raises `S2_GripperFault` and forces `DB50_KPIs.Throughput` to `0.0` instead of holding the last `7.81 s` cycle value.
